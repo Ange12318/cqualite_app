@@ -29,13 +29,13 @@
         .form-header {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 28px 32px;
-            margin-bottom: 32px;
+            gap: 22px 32px;
+            margin-bottom: 28px;
         }
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 7px;
+            gap: 6px;
         }
         .form-group label {
             font-size: 15px;
@@ -44,7 +44,7 @@
         }
         .form-group input,
         .form-group select {
-            padding: 9px 12px;
+            padding: 8px 12px;
             border: 1px solid #b0b0b0;
             border-radius: 7px;
             font-size: 15px;
@@ -68,7 +68,7 @@
         }
         th, td {
             border: 1px solid #e0e0e0;
-            padding: 10px 7px;
+            padding: 8px 6px;
             text-align: center;
             font-size: 15px;
         }
@@ -76,6 +76,14 @@
             background: #003366;
             color: #fff;
             font-weight: bold;
+        }
+        td input, td select {
+            width: 100%;
+            padding: 6px 4px;
+            border: 1px solid #b0b0b0;
+            border-radius: 5px;
+            background: #f4f6fa;
+            font-size: 15px;
         }
         tr td {
             background: #f4f6fa;
@@ -101,11 +109,12 @@
             color: #003366;
             font-size: 15px;
         }
-        .totals-bar .total-value {
-            background: #003366;
-            color: #fff;
+        .totals-bar input[type="text"] {
+            background: #f4f6fa;
+            color: #003366;
             padding: 7px 18px;
             border-radius: 8px;
+            border: 1px solid #b0b0b0;
             font-weight: bold;
             font-size: 16px;
             min-width: 60px;
@@ -181,7 +190,7 @@
 <body>
 <div class="content">
     <h2>Fiche Demande d'Analyse et de Sondage</h2>
-    <form>
+    <form method="post" action="ivoirienne.php">
         <div class="form-header">
             <div class="form-group">
                 <label for="reference">Référence</label>
@@ -259,71 +268,45 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <?php for($i=0;$i<10;$i++): ?>
                     <tr>
-                        <td>LOT001</td>
-                        <td>50</td>
-                        <td>3250</td>
-                        <td>ACE2025</td>
-                        <td>MAG1</td>
-                        <td>2025</td>
-                        <td>Supérieure</td>
-                        <td>Oui</td>
+                        <td><input type="text" name="lots[<?php echo $i; ?>][numero]" /></td>
+                        <td><input type="number" name="lots[<?php echo $i; ?>][sacs]" min="0" /></td>
+                        <td><input type="number" name="lots[<?php echo $i; ?>][poids]" min="0" step="0.01" /></td>
+                        <td><input type="text" name="lots[<?php echo $i; ?>][marque]" /></td>
+                        <td><input type="text" name="lots[<?php echo $i; ?>][magasin]" /></td>
+                        <td><input type="text" name="lots[<?php echo $i; ?>][recolte]" /></td>
+                        <td>
+                            <select name="lots[<?php echo $i; ?>][qualite]">
+                                <option value="">--</option>
+                                <option>Supérieure</option>
+                                <option>Standard</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="lots[<?php echo $i; ?>][parite]">
+                                <option value="">--</option>
+                                <option>Oui</option>
+                                <option>Non</option>
+                            </select>
+                        </td>
                     </tr>
-                    <tr>
-                        <td>LOT002</td>
-                        <td>40</td>
-                        <td>2600</td>
-                        <td>COCOA24</td>
-                        <td>MAG2</td>
-                        <td>2025</td>
-                        <td>Standard</td>
-                        <td>Non</td>
-                    </tr>
-                    <tr>
-                        <td>LOT003</td>
-                        <td>60</td>
-                        <td>3900</td>
-                        <td>CAFIV25</td>
-                        <td>MAG3</td>
-                        <td>2024</td>
-                        <td>Supérieure</td>
-                        <td>Oui</td>
-                    </tr>
-                    <tr>
-                        <td>LOT004</td>
-                        <td>30</td>
-                        <td>1950</td>
-                        <td>ACE2025</td>
-                        <td>MAG1</td>
-                        <td>2025</td>
-                        <td>Standard</td>
-                        <td>Non</td>
-                    </tr>
-                    <tr>
-                        <td>LOT005</td>
-                        <td>45</td>
-                        <td>2925</td>
-                        <td>COCOA24</td>
-                        <td>MAG2</td>
-                        <td>2025</td>
-                        <td>Supérieure</td>
-                        <td>Oui</td>
-                    </tr>
+                    <?php endfor; ?>
                 </tbody>
             </table>
         </div>
         <div class="totals-bar">
             <div class="total-group">
                 <label>Nbre de Sacs</label>
-                <span class="total-value">225</span>
+                <input type="text" name="total_sacs" value="" />
             </div>
             <div class="total-group">
                 <label>Total Poids Net (Kg)</label>
-                <span class="total-value">14625</span>
+                <input type="text" name="total_poids" value="" />
             </div>
             <div class="total-group">
                 <label>Nbre de Lots</label>
-                <span class="total-value">5</span>
+                <input type="text" name="total_lots" value="" />
             </div>
         </div>
         <div class="actions-bar">
