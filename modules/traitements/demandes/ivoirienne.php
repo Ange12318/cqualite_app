@@ -1,14 +1,5 @@
-<?php
-include('../../../includes/header.php');
-include('../../../includes/sidebar.php');
-include('../../../includes/db.php');
-
-// Récupération des listes dynamiques depuis la base
-$exportateurs = $pdo->query("SELECT ID_EXPORTATEUR, RAISONSOCIALE_EXPORTATEUR, MARQUE_EXPORTATEUR, CODE_EXPORTATEUR FROM exportateurs ORDER BY RAISONSOCIALE_EXPORTATEUR")->fetchAll();
-$campagnes = $pdo->query("SELECT CAMP_DEMANDE FROM campagne ORDER BY CAMP_DEMANDE DESC")->fetchAll();
-$villes = $pdo->query("SELECT DISTINCT VILLE_EXPORTATEUR FROM exportateurs WHERE VILLE_EXPORTATEUR IS NOT NULL AND VILLE_EXPORTATEUR <> '' ORDER BY VILLE_EXPORTATEUR")->fetchAll();
-$produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER BY LIBELLE_PRODUIT")->fetchAll();
-?>
+<?php include('../../../includes/header.php'); ?>
+<?php include('../../../includes/sidebar.php'); ?>
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -22,63 +13,91 @@ $produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER 
             background: #f4f6fa;
         }
         .content {
-            max-width: 1200px;
+            max-width: 98vw;
             margin: 30px auto 0 auto;
-            padding: 30px 30px 20px 30px;
+            padding: 30px 20px 20px 20px;
             background: #fff;
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.10);
         }
-        h2 {
-            text-align: center;
-            color: #003366;
-            margin-bottom: 25px;
-            font-size: 2rem;
-            font-weight: bold;
-        }
         .filters {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            flex-wrap: wrap;
             gap: 18px 30px;
             margin-bottom: 18px;
+            align-items: flex-end;
         }
         .filter-group {
             display: flex;
             flex-direction: column;
+            min-width: 180px;
         }
         .filter-group label {
-            font-size: 15px;
+            font-size: 14px;
             color: #003366;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: bold;
         }
         .filter-group input,
         .filter-group select {
-            padding: 10px 12px;
+            padding: 7px 10px;
             border: 1px solid #b0b0b0;
-            border-radius: 7px;
+            border-radius: 6px;
             font-size: 15px;
             background: #f4f6fa;
         }
-        .actions-bar {
-            display: flex;
-            gap: 24px;
-            margin: 30px 0 0 0;
-            flex-wrap: wrap;
+        .table-container {
+            overflow-x: auto;
+            background: none;
         }
-        .actions-bar button {
-            padding: 12px 32px;
-            border: none;
-            border-radius: 10px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 15px;
+        }
+        th {
             background: #003366;
             color: #fff;
-            font-size: 18px;
+            font-weight: bold;
+        }
+        tr:nth-child(even) td {
+            background: #f4f6fa;
+        }
+        tr:nth-child(odd) td {
+            background: #fff;
+        }
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .actions-bar button, .actions-bar input[type="button"] {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 7px;
+            background: #003366;
+            color: #fff;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .actions-bar button:hover {
+        .actions-bar button:hover, .actions-bar input[type="button"]:hover {
+            background: #00509e;
+        }
+        .refresh-btn {
+            background: #003366;
+        }
+        .refresh-btn:hover {
             background: #00509e;
         }
         .delete-btn {
@@ -91,26 +110,26 @@ $produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER 
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            margin-top: 30px;
+            margin-top: 18px;
         }
         .total-lots {
             background: #003366;
             color: #fff;
-            padding: 14px 38px;
-            border-radius: 12px;
+            padding: 8px 18px;
+            border-radius: 8px;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 16px;
         }
         .back-btn {
             position: fixed;
-            left: 45px;
-            bottom: 45px;
-            padding: 18px 38px;
+            left: 30px;
+            bottom: 30px;
+            padding: 12px 28px;
             background: #003366;
             color: #fff;
             border: none;
-            border-radius: 12px;
-            font-size: 20px;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: bold;
             text-align: center;
             text-decoration: none;
@@ -121,20 +140,12 @@ $produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER 
         .back-btn:hover {
             background: #c62828;
         }
-        @media (max-width: 1100px) {
-            .content { max-width: 98vw; }
-            .filters { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 700px) {
-            .filters { grid-template-columns: 1fr; }
-            .actions-bar, .footer-bar { flex-direction: column; gap: 12px; }
-        }
     </style>
 </head>
 <body>
 <div class="content">
-    <h2>📝 Liste des Demandes - Autorités Ivoirienne</h2>
-    <form class="filters" method="get" action="">
+    <h2 style="text-align:center; color:#003366; margin-bottom:25px;">📋 Liste des Demandes - Autorités Ivoirienne</h2>
+    <form class="filters">
         <div class="filter-group">
             <label for="reference">Référence</label>
             <input type="text" id="reference" name="reference">
@@ -145,29 +156,11 @@ $produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER 
         </div>
         <div class="filter-group">
             <label for="exportateur">Exportateur</label>
-            <select id="exportateur" name="exportateur">
-                <option value="">-- Tous --</option>
-                <?php foreach($exportateurs as $exp): ?>
-                    <option value="<?= $exp['ID_EXPORTATEUR'] ?>">
-                        <?= htmlspecialchars(
-                            trim(
-                                ($exp['RAISONSOCIALE_EXPORTATEUR'] ?: '') .
-                                ($exp['MARQUE_EXPORTATEUR'] ? ' / '.$exp['MARQUE_EXPORTATEUR'] : '') .
-                                ($exp['CODE_EXPORTATEUR'] ? ' / '.$exp['CODE_EXPORTATEUR'] : '')
-                            )
-                        ) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <input type="text" id="exportateur" name="exportateur">
         </div>
         <div class="filter-group">
             <label for="produit">Produit</label>
-            <select id="produit" name="produit">
-                <option value="">-- Tous --</option>
-                <?php foreach($produits as $prod): ?>
-                    <option value="<?= $prod['ID_PRODUIT'] ?>"><?= htmlspecialchars($prod['LIBELLE_PRODUIT']) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <input type="text" id="produit" name="produit">
         </div>
         <div class="filter-group">
             <label for="date_debut">Date Début</label>
@@ -180,28 +173,56 @@ $produits = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER 
         <div class="filter-group">
             <label for="campagne">Campagne</label>
             <select id="campagne" name="campagne">
-                <option value="">-- Toutes --</option>
-                <?php foreach($campagnes as $camp): ?>
-                    <option value="<?= htmlspecialchars($camp['CAMP_DEMANDE']) ?>"><?= htmlspecialchars($camp['CAMP_DEMANDE']) ?></option>
-                <?php endforeach; ?>
+                <option>2024/2025</option>
+                <option>2023/2024</option>
+                <option>2022/2023</option>
             </select>
         </div>
         <div class="filter-group">
             <label for="ville">Ville</label>
             <select id="ville" name="ville">
-                <option value="">-- Toutes --</option>
-                <?php foreach($villes as $ville): ?>
-                    <option value="<?= htmlspecialchars($ville['VILLE_EXPORTATEUR']) ?>"><?= htmlspecialchars($ville['VILLE_EXPORTATEUR']) ?></option>
-                <?php endforeach; ?>
+                <option>ABIDJAN</option>
+                <option>YAMOUSSOUKRO</option>
+                <option>BOUAKE</option>
             </select>
         </div>
     </form>
     <div class="actions-bar">
         <button type="button" class="refresh-btn">Actualiser les Demandes</button>
-        <button type="button">Ajouter</button>
+        <a href="/cqualite_app/modules/traitements/demandes/ajouter.php"><button type="button">Ajouter</button></a>
         <button type="button">Modifier</button>
         <button type="button" class="delete-btn">Supprimer</button>
         <button type="button">Imprimer</button>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Produit</th>
+                    <th>Ville</th>
+                    <th>Exportateurs</th>
+                    <th>Date Réception</th>
+                    <th>Date Expiration</th>
+                    <th>Campagne</th>
+                    <th>Nbre de Lots</th>
+                    <th>Poids Net</th>
+                    <th>Nbre de BV</th>
+                    <th>Nbre de BA</th>
+                    <th>Etat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Exemple de lignes vides pour l'affichage -->
+                <?php for($i=0;$i<15;$i++): ?>
+                <tr>
+                    <td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td>
+                </tr>
+                <?php endfor; ?>
+            </tbody>
+        </table>
     </div>
     <div class="footer-bar">
         <span class="total-lots">Nombre Total de lots : 0</span>
