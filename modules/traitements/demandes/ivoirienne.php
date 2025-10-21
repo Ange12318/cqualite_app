@@ -1,6 +1,77 @@
 <?php 
 $pageTitle = "Demandes Autorités Ivoirienne";
 include('../../../includes/header.php'); 
+
+// Inclure la configuration de la base de données
+require_once('../../../config.php');
+
+// Récupérer les campagnes depuis la base de données
+try {
+    $stmt = $pdo->query("SELECT CAMP_DEMANDE, DATE_DEBUT_CAMPAGNE, DATE_FIN_CAMPAGNE, ETAT_CAMPAGNE FROM campagne ORDER BY DATE_DEBUT_CAMPAGNE DESC");
+    $campagnes = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $campagnes = [];
+    error_log("Erreur lors de la récupération des campagnes: " . $e->getMessage());
+}
+
+// Récupérer les exportateurs depuis la base de données
+try {
+    $stmt = $pdo->query("SELECT ID_EXPORTATEUR, CODE_EXPORTATEUR, RAISONSOCIALE_EXPORTATEUR FROM exportateurs ORDER BY RAISONSOCIALE_EXPORTATEUR");
+    $exportateurs = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $exportateurs = [];
+    error_log("Erreur lors de la récupération des exportateurs: " . $e->getMessage());
+}
+
+// Récupérer les produits depuis la base de données
+try {
+    $stmt = $pdo->query("SELECT ID_PRODUIT, LIBELLE_PRODUIT FROM produits ORDER BY LIBELLE_PRODUIT");
+    $produits = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $produits = [];
+    error_log("Erreur lors de la récupération des produits: " . $e->getMessage());
+}
+
+// Récupérer les villes depuis poste_controle
+try {
+    $stmt = $pdo->query("SELECT DISTINCT VILLE_POSTE_CONTROLE FROM poste_controle WHERE VILLE_POSTE_CONTROLE IS NOT NULL ORDER BY VILLE_POSTE_CONTROLE");
+    $villes = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $villes = [];
+    error_log("Erreur lors de la récupération des villes: " . $e->getMessage());
+}
+
+// Récupérer les demandes avec leurs relations
+try {
+    $sql = "SELECT 
+                d.ID_DEMANDE,
+                d.REF_DEMANDE,
+                d.AUT_DEMANDE,
+                d.DATEEMI_DEMANDE,
+                d.DATEREC_DEMANDE,
+                d.CAMP_DEMANDE,
+                d.NBRELOT_DEMANDE,
+                d.POIDS_DEMANDE,
+                d.NBRE_BV_DEMANDE,
+                d.NBRE_BA_DEMANDE,
+                d.ETAT_DEMANDE,
+                d.DATE_EXPIR_DEMANDE,
+                p.LIBELLE_PRODUIT,
+                e.RAISONSOCIALE_EXPORTATEUR,
+                e.VILLE_EXPORTATEUR,
+                pc.VILLE_POSTE_CONTROLE
+            FROM demandes d
+            LEFT JOIN produits p ON d.ID_PRODUIT = p.ID_PRODUIT
+            LEFT JOIN exportateurs e ON d.ID_EXPORTATEUR = e.ID_EXPORTATEUR
+            LEFT JOIN poste_controle pc ON d.CODE_POSTE_CONTROLE = pc.CODE_POSTE_CONTROLE
+            ORDER BY d.DATEREC_DEMANDE DESC";
+    
+    $stmt = $pdo->query($sql);
+    $demandes = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $demandes = [];
+    error_log("Erreur lors de la récupération des demandes: " . $e->getMessage());
+}
 ?>
 
 <!DOCTYPE html>
@@ -509,9 +580,11 @@ include('../../../includes/header.php');
                         </label>
                         <select id="exportateur" name="exportateur" class="filter-control">
                             <option value="">Tous les exportateurs</option>
-                            <option value="ACE">ACE EXPORT</option>
-                            <option value="COCOA">COCOA CI</option>
-                            <option value="CAFE">CAFÉ IVOIRE</option>
+                            <?php foreach($exportateurs as $exportateur): ?>
+                                <option value="<?= htmlspecialchars($exportateur['ID_EXPORTATEUR']) ?>">
+                                    <?= htmlspecialchars($exportateur['RAISONSOCIALE_EXPORTATEUR']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
@@ -522,8 +595,11 @@ include('../../../includes/header.php');
                         </label>
                         <select id="produit" name="produit" class="filter-control">
                             <option value="">Tous les produits</option>
-                            <option value="CACAO">Cacao</option>
-                            <option value="CAFE">Café</option>
+                            <?php foreach($produits as $produit): ?>
+                                <option value="<?= htmlspecialchars($produit['ID_PRODUIT']) ?>">
+                                    <?= htmlspecialchars($produit['LIBELLE_PRODUIT']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
@@ -550,9 +626,14 @@ include('../../../includes/header.php');
                         </label>
                         <select id="campagne" name="campagne" class="filter-control">
                             <option value="">Toutes les campagnes</option>
-                            <option value="2024/2025">2024/2025</option>
-                            <option value="2023/2024">2023/2024</option>
-                            <option value="2022/2023">2022/2023</option>
+                            <?php foreach($campagnes as $campagne): ?>
+                                <option value="<?= htmlspecialchars($campagne['CAMP_DEMANDE']) ?>">
+                                    <?= htmlspecialchars($campagne['CAMP_DEMANDE']) ?> 
+                                    <?php if($campagne['DATE_DEBUT_CAMPAGNE'] && $campagne['DATE_FIN_CAMPAGNE']): ?>
+                                        (<?= date('d/m/Y', strtotime($campagne['DATE_DEBUT_CAMPAGNE'])) ?> - <?= date('d/m/Y', strtotime($campagne['DATE_FIN_CAMPAGNE'])) ?>)
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
@@ -563,9 +644,11 @@ include('../../../includes/header.php');
                         </label>
                         <select id="ville" name="ville" class="filter-control">
                             <option value="">Toutes les villes</option>
-                            <option value="ABIDJAN">ABIDJAN</option>
-                            <option value="YAMOUSSOUKRO">YAMOUSSOUKRO</option>
-                            <option value="BOUAKE">BOUAKE</option>
+                            <?php foreach($villes as $ville): ?>
+                                <option value="<?= htmlspecialchars($ville['VILLE_POSTE_CONTROLE']) ?>">
+                                    <?= htmlspecialchars($ville['VILLE_POSTE_CONTROLE']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
@@ -663,14 +746,12 @@ include('../../../includes/header.php');
 
     <script>
         // Variables globales
-        let demandes = [];
+        let demandes = <?= json_encode($demandes) ?>;
         let currentPage = 1;
         const itemsPerPage = 10;
 
-        // Charger les données depuis le localStorage
+        // Charger les données depuis PHP
         function chargerDonnees() {
-            const savedData = localStorage.getItem('demandesAutorites');
-            demandes = savedData ? JSON.parse(savedData) : [];
             afficherDemandes();
             calculerTotaux();
         }
@@ -706,26 +787,26 @@ include('../../../includes/header.php');
             paginatedDemandes.forEach(demande => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><strong>${demande.reference}</strong></td>
+                    <td><strong>${demande.REF_DEMANDE || '-'}</strong></td>
                     <td>
                         <span class="product-badge">
-                            <i class="fas fa-${demande.produit === 'CACAO' ? 'seedling' : 'coffee'}"></i>
-                            ${demande.produit}
+                            <i class="fas fa-${getProductIcon(demande.LIBELLE_PRODUIT)}"></i>
+                            ${demande.LIBELLE_PRODUIT || 'Non spécifié'}
                         </span>
                     </td>
-                    <td>${demande.ville}</td>
-                    <td>${getExportateurName(demande.exportateur)}</td>
-                    <td>${formaterDate(demande.date_autorisation)}</td>
-                    <td>${formaterDate(demande.date_validation)}</td>
-                    <td>${demande.campagne}</td>
-                    <td><strong>${demande.total_lots}</strong></td>
-                    <td>${demande.total_poids.toLocaleString()} kg</td>
-                    <td><strong>${Math.ceil(demande.total_lots / 3)}</strong></td>
-                    <td><strong>${Math.ceil(demande.total_lots / 4)}</strong></td>
+                    <td>${demande.VILLE_POSTE_CONTROLE || demande.VILLE_EXPORTATEUR || '-'}</td>
+                    <td>${demande.RAISONSOCIALE_EXPORTATEUR || '-'}</td>
+                    <td>${formaterDate(demande.DATEREC_DEMANDE)}</td>
+                    <td>${formaterDate(demande.DATE_EXPIR_DEMANDE)}</td>
+                    <td>${demande.CAMP_DEMANDE || '-'}</td>
+                    <td><strong>${demande.NBRELOT_DEMANDE || 0}</strong></td>
+                    <td>${(demande.POIDS_DEMANDE || 0).toLocaleString()} kg</td>
+                    <td><strong>${demande.NBRE_BV_DEMANDE || 0}</strong></td>
+                    <td><strong>${demande.NBRE_BA_DEMANDE || 0}</strong></td>
                     <td>
-                        <button class="status-btn status-${demande.etat}" onclick="changerEtat('${demande.id}')">
-                            <i class="fas fa-${getEtatIcon(demande.etat)}"></i>
-                            ${getEtatText(demande.etat)}
+                        <button class="status-btn status-${getEtatClass(demande.ETAT_DEMANDE)}">
+                            <i class="fas fa-${getEtatIcon(demande.ETAT_DEMANDE)}"></i>
+                            ${getEtatText(demande.ETAT_DEMANDE)}
                         </button>
                     </td>
                 `;
@@ -745,77 +826,48 @@ include('../../../includes/header.php');
             const ville = document.getElementById('ville').value;
 
             return demandes.filter(demande => {
-                return (!reference || demande.reference.toLowerCase().includes(reference)) &&
-                       (!numAutorisation || demande.num_autorisation.toLowerCase().includes(numAutorisation)) &&
-                       (!exportateur || demande.exportateur === exportateur) &&
-                       (!produit || demande.produit === produit) &&
-                       (!dateDebut || demande.date_autorisation >= dateDebut) &&
-                       (!dateFin || demande.date_autorisation <= dateFin) &&
-                       (!campagne || demande.campagne === campagne) &&
-                       (!ville || demande.ville === ville);
+                return (!reference || (demande.REF_DEMANDE && demande.REF_DEMANDE.toLowerCase().includes(reference))) &&
+                       (!numAutorisation || (demande.AUT_DEMANDE && demande.AUT_DEMANDE.toLowerCase().includes(numAutorisation))) &&
+                       (!exportateur || demande.ID_EXPORTATEUR == exportateur) &&
+                       (!produit || demande.ID_PRODUIT == produit) &&
+                       (!dateDebut || (demande.DATEREC_DEMANDE && demande.DATEREC_DEMANDE >= dateDebut)) &&
+                       (!dateFin || (demande.DATEREC_DEMANDE && demande.DATEREC_DEMANDE <= dateFin)) &&
+                       (!campagne || demande.CAMP_DEMANDE === campagne) &&
+                       (!ville || (demande.VILLE_POSTE_CONTROLE && demande.VILLE_POSTE_CONTROLE === ville));
             });
         }
 
-        // Changer l'état d'une demande
-        function changerEtat(demandeId) {
-            const demande = demandes.find(d => d.id == demandeId);
-            if (!demande) return;
-
-            // Cycle des états: en_attente -> approuve -> rejete -> en_attente
-            const etats = ['en_attente', 'approuve', 'rejete'];
-            const currentIndex = etats.indexOf(demande.etat);
-            const nextIndex = (currentIndex + 1) % etats.length;
-            demande.etat = etats[nextIndex];
-
-            // Sauvegarder les modifications
-            localStorage.setItem('demandesAutorites', JSON.stringify(demandes));
-            
-            // Mettre à jour l'affichage
-            afficherDemandes();
-            
-            // Message de confirmation
-            const etatText = getEtatText(demande.etat);
-            showNotification(`État de la demande ${demande.reference} changé en: ${etatText}`, 'success');
-        }
-
-        // Calculer les totaux
-        function calculerTotaux() {
-            const filteredDemandes = appliquerFiltres(demandes);
-            const totalLots = filteredDemandes.reduce((sum, d) => sum + d.total_lots, 0);
-            const totalPoids = filteredDemandes.reduce((sum, d) => sum + d.total_poids, 0);
-
-            document.getElementById('totalLots').innerHTML = 
-                `<i class="fas fa-boxes"></i> Total Lots: ${totalLots}`;
-            document.getElementById('totalPoids').innerHTML = 
-                `<i class="fas fa-weight-hanging"></i> Poids Total: ${totalPoids.toLocaleString()} kg`;
-        }
-
-        // Fonctions utilitaires
-        function getExportateurName(code) {
-            const exportateurs = {
-                'ACE': 'ACE EXPORT',
-                'COCOA': 'COCOA CI',
-                'CAFE': 'CAFÉ IVOIRE'
-            };
-            return exportateurs[code] || code;
+        // Fonctions utilitaires pour les états
+        function getEtatClass(etat) {
+            if (!etat) return 'pending';
+            const etatLower = etat.toLowerCase();
+            if (etatLower.includes('valid') || etatLower.includes('approuv')) return 'approved';
+            if (etatLower.includes('rejet') || etatLower.includes('refus')) return 'rejected';
+            return 'pending';
         }
 
         function getEtatIcon(etat) {
-            const icons = {
-                'en_attente': 'clock',
-                'approuve': 'check',
-                'rejete': 'times'
-            };
-            return icons[etat] || 'question';
+            if (!etat) return 'clock';
+            const etatLower = etat.toLowerCase();
+            if (etatLower.includes('valid') || etatLower.includes('approuv')) return 'check';
+            if (etatLower.includes('rejet') || etatLower.includes('refus')) return 'times';
+            return 'clock';
         }
 
         function getEtatText(etat) {
-            const texts = {
-                'en_attente': 'En attente',
-                'approuve': 'Validé',
-                'rejete': 'Rejeté'
-            };
-            return texts[etat] || 'Inconnu';
+            if (!etat) return 'En attente';
+            const etatLower = etat.toLowerCase();
+            if (etatLower.includes('valid') || etatLower.includes('approuv')) return 'Validé';
+            if (etatLower.includes('rejet') || etatLower.includes('refus')) return 'Rejeté';
+            return etat;
+        }
+
+        function getProductIcon(produit) {
+            if (!produit) return 'box';
+            const produitLower = produit.toLowerCase();
+            if (produitLower.includes('cacao') || produitLower.includes('cocoa')) return 'seedling';
+            if (produitLower.includes('cafe') || produitLower.includes('coffee')) return 'coffee';
+            return 'box';
         }
 
         function formaterDate(dateString) {
@@ -824,14 +876,24 @@ include('../../../includes/header.php');
             return date.toLocaleDateString('fr-FR');
         }
 
+        // Calculer les totaux
+        function calculerTotaux() {
+            const filteredDemandes = appliquerFiltres(demandes);
+            const totalLots = filteredDemandes.reduce((sum, d) => sum + (d.NBRELOT_DEMANDE || 0), 0);
+            const totalPoids = filteredDemandes.reduce((sum, d) => sum + (d.POIDS_DEMANDE || 0), 0);
+
+            document.getElementById('totalLots').innerHTML = 
+                `<i class="fas fa-boxes"></i> Total Lots: ${totalLots}`;
+            document.getElementById('totalPoids').innerHTML = 
+                `<i class="fas fa-weight-hanging"></i> Poids Total: ${totalPoids.toLocaleString()} kg`;
+        }
+
         function actualiserDonnees() {
-            chargerDonnees();
-            showNotification('Données actualisées avec succès', 'success');
+            location.reload();
         }
 
         function supprimerSelection() {
             if (confirm('Êtes-vous sûr de vouloir supprimer les demandes sélectionnées ?')) {
-                // Implémentation de la suppression
                 showNotification('Fonctionnalité de suppression à implémenter', 'info');
             }
         }
@@ -849,6 +911,21 @@ include('../../../includes/header.php');
 
         function updatePagination() {
             // Implémentation de la mise à jour de la pagination
+            const totalPages = Math.ceil(appliquerFiltres(demandes).length / itemsPerPage);
+            const paginationContainer = document.querySelector('.pagination');
+            
+            // Mettre à jour les boutons de pagination
+            const buttons = paginationContainer.querySelectorAll('.pagination-btn');
+            buttons.forEach(btn => {
+                if (!btn.querySelector('i')) {
+                    const pageNum = parseInt(btn.textContent);
+                    if (pageNum === currentPage) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
         }
 
         function showNotification(message, type) {
@@ -859,7 +936,7 @@ include('../../../includes/header.php');
                 top: 20px;
                 right: 20px;
                 padding: 15px 20px;
-                background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
                 color: white;
                 border-radius: 10px;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.2);
